@@ -130,7 +130,7 @@ Total run time:  694.437 s
 
 ```
 После работы миньонов необходимо перезагрузить ноду proxy или просто службу nginx, так как после раскатки роли с firewalld обрываются все подключения.
-Задание выполнено, страничка с выбором языка и началом установки Wordpress будет находится по адресу, который выводит outputs terraform в блоке **reversedns
+Страничка с выбором языка и началом установки Wordpress будет находится по адресу, который выводит outputs terraform в блоке **reversedns
 ```
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
