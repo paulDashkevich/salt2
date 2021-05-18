@@ -1,0 +1,103 @@
+- name: Install rpm Salt
+  yum: name=https://repo.saltstack.com/py3/redhat/salt-py3-repo-latest.el7.noarch.rpm
+
+- name: Install master
+  yum:
+    name:
+      - systemd-python
+      - salt-master
+  when: ansible_hostname == "iscsi"
+
+- name: Install minions
+  yum:
+    name:
+      - systemd-python
+      - salt-minion
+  when: ansible_hostname != "iscsi"
+
+- name: Insert master config
+  template:
+      src: master.j2
+      dest: /etc/salt/master
+  when: ansible_hostname == "iscsi"
+
+- name: Start master Salt
+  systemd:
+      name: salt-master
+      state: restarted
+  when: ansible_hostname == "iscsi"
+
+- name: Insert MINION config
+  template:
+      src: minion.j2
+      dest: /etc/salt/minion
+  when: ansible_hostname != "iscsi"
+
+- name: Insert keys master
+  copy:
+      src: "{{ item }}"
+      dest: /etc/salt/pki/master/
+      owner: root
+  with_items:
+      - master.pem
+      - master.pub
+  when: ansible_hostname == "iscsi"
+
+- name: Wait until the dir is present before continuing
+  wait_for:
+      path: /etc/salt/pki/master/minions/
+  when: ansible_hostname == "iscsi"
+
+- name: Insert keys MINION_IDs
+  copy:
+      src: "files/{{ item }}"
+      dest: /etc/salt/pki/master/minions/
+      owner: root
+  with_items:
+      - web0
+      - web1
+  when: ansible_hostname == "iscsi"
+
+- name: Insert keys.pub at web0
+  template:
+      src: minion_web0_pub.j2
+      dest: /etc/salt/pki/minion/minion.pub
+  when: ansible_hostname == "web0"
+
+- name: Insert keys.pem at web0
+  template:
+      src: minion_web0_pem.j2
+      dest: /etc/salt/pki/minion/minion.pem
+  when: ansible_hostname == "web0"
+
+- name: Insert keys.pem at web1
+  template:
+      src: minion_web1_pem.j2
+      dest: /etc/salt/pki/minion/minion.pem
+  when: ansible_hostname == "web1"
+
+- name: Insert keys.pub at web1
+  template:
+      src: minion_web1_pub.j2
+      dest: /etc/salt/pki/minion/minion.pub
+  when: ansible_hostname == "web1"
+
+- name: Enable and retart master Salt
+  systemd:
+    name: salt-master
+    state: restarted
+    enabled: yes
+  when: ansible_hostname == "iscsi"
+
+- name: Enable and restart minions Salt
+  systemd:
+    name: salt-minion
+    state: restarted
+    enabled: yes
+  when: ansible_hostname != "iscsi"
+
+- name: Create remote_dirs
+  copy:
+    src: files/srv/
+    dest: /srv
+  when: ansible_hostname == "iscsi"
